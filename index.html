@@ -23,9 +23,7 @@
 </head>
 <body>
     <div id="main">
-        <audio id="myAudio">
-            <source src="aud.mp3" type="audio/mp3" />
-        </audio>
+        <audio id="myAudio"><source src="aud.mp3" type="audio/mp3" /></audio>
         <div id="wrap">
             <div id="text">
                 <div id="code">
@@ -38,9 +36,6 @@
                     <span class="say">Hope u have a great day today ❤️😘</span><br>
                 </div>
             </div>
-            <div id="clock-box">
-                <span id="clock"></span>
-            </div>
             <canvas id="canvas"></canvas>
         </div>
     </div>
@@ -48,12 +43,6 @@
     <script>
     (function() {
         var canvas = $('#canvas');
-        if (!canvas[0].getContext) {
-            $("#error").show();
-            return false;
-        }
-
-        // DYNAMIC SCREEN SIZING
         var width = $(window).width();
         var height = $(window).height();        
         canvas.attr("width", width);
@@ -61,27 +50,24 @@
 
         var opts = {
             seed: {
-                x: width / 2 - 20,
-                y: height / 2 + 50, // Positioned for mobile view
-                color: "#7851A9",    // ROYAL PURPLE
+                x: width / 2,
+                y: height * 0.85, // Start seed very low
+                color: "#7851A9",
                 scale: 2
             },
             branch: [
-                [width/2, height, width/2, height-200, width/2, height-400, 30, 100, [
-                    [width/2, height-250, width/2-100, height-350, width/2-200, height-400, 13, 100],
-                    [width/2, height-250, width/2+100, height-350, width/2+200, height-400, 12, 100]
+                // SHORTER TRUNK: Only grows up a small amount to stay in bottom half
+                [width/2, height, width/2, height-100, width/2, height-200, 20, 100, [
+                    [width/2, height-150, width/2-60, height-220, width/2-100, height-250, 8, 100],
+                    [width/2, height-150, width/2+60, height-220, width/2+100, height-250, 8, 100]
                 ]] 
             ],
             bloom: {
-                num: 700,
+                num: 350, // Fewer hearts to avoid clutter
                 width: width,
-                height: height,
+                height: height * 0.5, // LIMITS BLOOM TO BOTTOM 50% OF SCREEN
             },
-            footer: {
-                width: width,
-                height: 5,
-                speed: 10,
-            }
+            footer: { width: width, height: 5, speed: 10 }
         }
 
         var tree = new Tree(canvas[0], width, height, opts);
@@ -89,81 +75,46 @@
         var foot = tree.footer;
         var hold = 1;
 
-// --- MOBILE & DESKTOP TOUCH FIX START ---
         var handleInteraction = function(e) {
-            playAudio(); // Plays the aud.mp3
+            playAudio();
             var offset = canvas.offset(), x, y;
-            
-            // Logic to detect if it's a finger touch or a mouse click
             if (e.originalEvent && e.originalEvent.touches) {
-                // Phone touch
                 x = e.originalEvent.touches[0].pageX - offset.left;
                 y = e.originalEvent.touches[0].pageY - offset.top;
-            } else if (e.pageX) {
-                // Desktop click
+            } else {
                 x = e.pageX - offset.left;
                 y = e.pageY - offset.top;
             }
-
             if (seed.hover(x, y)) {
                 hold = 0; 
-                canvas.unbind("click touchstart"); 
+                canvas.unbind("click touchstart");
                 canvas.unbind("mousemove");
-                canvas.removeClass('hand');
             }
         };
 
-        // Bind both events so it works on ALL devices
         canvas.bind("click", handleInteraction);
         canvas.bind("touchstart", handleInteraction);
 
-        canvas.mousemove(function(e) {
-            var offset = canvas.offset(), x, y;
-            x = e.pageX - offset.left;
-            y = e.pageY - offset.top;
-            canvas.toggleClass('hand', seed.hover(x, y));
-        });
-        // --- MOBILE & DESKTOP TOUCH FIX END ---
-
-        // ANIMATION SEQUENCES
         var seedAnimate = eval(Jscex.compile("async", function () {
             seed.draw();
             while (hold) { $await(Jscex.Async.sleep(10)); }
-            while (seed.canScale()) {
-                seed.scale(0.95);
-                $await(Jscex.Async.sleep(10));
-            }
-            while (seed.canMove()) {
-                seed.move(0, 2);
-                foot.draw();
-                $await(Jscex.Async.sleep(10));
-            }
+            while (seed.canScale()) { seed.scale(0.95); $await(Jscex.Async.sleep(10)); }
+            while (seed.canMove()) { seed.move(0, 2); foot.draw(); $await(Jscex.Async.sleep(10)); }
         }));
 
         var growAnimate = eval(Jscex.compile("async", function () {
-            do {
-                tree.grow();
-                $await(Jscex.Async.sleep(10));
-            } while (tree.canGrow());
+            do { tree.grow(); $await(Jscex.Async.sleep(10)); } while (tree.canGrow());
         }));
 
         var flowAnimate = eval(Jscex.compile("async", function () {
-            do {
-                tree.flower(2);
-                $await(Jscex.Async.sleep(10));
-            } while (tree.canFlower());
+            do { tree.flower(2); $await(Jscex.Async.sleep(10)); } while (tree.canFlower());
         }));
 
         var moveAnimate = eval(Jscex.compile("async", function () {
+            // REMOVED THE SHIFT: Tree stays centered so it doesn't move under text
             tree.snapshot("p1", 0, 0, width, height);
-            // On mobile, we reduce the "shift" distance to keep it centered
-            var targetX = width > 500 ? width * 0.1 : 0; 
-            while (tree.move("p1", targetX, 0)) {
-                foot.draw();
-                $await(Jscex.Async.sleep(10));
-            }
             foot.draw();
-            tree.snapshot("p2", targetX, 0, width, height);
+            tree.snapshot("p2", 0, 0, width, height);
             canvas.parent().css("background", "url(" + tree.toDataURL('image/png') + ")");
             $await(Jscex.Async.sleep(300));
             canvas.css("background", "none");
@@ -186,4 +137,3 @@
     </script>
 </body>
 </html>
-
