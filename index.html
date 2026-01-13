@@ -61,14 +61,14 @@
                 return false;
             }
 
-            var width = canvas.width();
-            var height = canvas.height();
+            var width = $(window).width();
+            var height = $(window).height();
             canvas.attr("width", width);
             canvas.attr("height", height);
-
             var opts = {
                 seed: {
-                    x: width / 2 - 20,
+                    x: width / 2,
+                    y: height - 150,
                     color: "rgb(120, 81, 169)",
                     scale: 2
                 },
@@ -206,5 +206,6 @@
         })();
     </script>
 </body>
+
 
 </html>
