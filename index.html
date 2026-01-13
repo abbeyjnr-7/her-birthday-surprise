@@ -89,23 +89,41 @@
         var foot = tree.footer;
         var hold = 1;
 
-        canvas.click(function(e) {
-            playAudio();
+// --- MOBILE & DESKTOP TOUCH FIX START ---
+        var handleInteraction = function(e) {
+            playAudio(); // Plays the aud.mp3
             var offset = canvas.offset(), x, y;
-            x = e.pageX - offset.left;
-            y = e.pageY - offset.top;
+            
+            // Logic to detect if it's a finger touch or a mouse click
+            if (e.originalEvent && e.originalEvent.touches) {
+                // Phone touch
+                x = e.originalEvent.touches[0].pageX - offset.left;
+                y = e.originalEvent.touches[0].pageY - offset.top;
+            } else if (e.pageX) {
+                // Desktop click
+                x = e.pageX - offset.left;
+                y = e.pageY - offset.top;
+            }
+
             if (seed.hover(x, y)) {
                 hold = 0; 
-                canvas.unbind("click");
+                canvas.unbind("click touchstart"); 
                 canvas.unbind("mousemove");
                 canvas.removeClass('hand');
             }
-        }).mousemove(function(e) {
+        };
+
+        // Bind both events so it works on ALL devices
+        canvas.bind("click", handleInteraction);
+        canvas.bind("touchstart", handleInteraction);
+
+        canvas.mousemove(function(e) {
             var offset = canvas.offset(), x, y;
             x = e.pageX - offset.left;
             y = e.pageY - offset.top;
             canvas.toggleClass('hand', seed.hover(x, y));
         });
+        // --- MOBILE & DESKTOP TOUCH FIX END ---
 
         // ANIMATION SEQUENCES
         var seedAnimate = eval(Jscex.compile("async", function () {
@@ -168,3 +186,4 @@
     </script>
 </body>
 </html>
+
